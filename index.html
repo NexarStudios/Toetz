@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Toetz - Deel je kennis</title>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
     
     <style>
@@ -15,6 +16,7 @@
             --bg: #F4F6F8;
             --white: #ffffff;
             --danger: #ff4b4b;
+            --success: #00c851;
         }
 
         body {
@@ -38,16 +40,18 @@
             z-index: 100;
         }
 
-        .logo {
-            font-size: 1.5rem;
-            font-weight: 700;
-            color: var(--primary);
+        .logo { font-size: 1.5rem; font-weight: 700; color: var(--primary); }
+
+        .nav-center {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-grow: 1;
+            max-width: 600px;
+            margin: 0 2rem;
         }
 
-        .nav-actions {
-            display: flex;
-            gap: 1rem;
-        }
+        .nav-actions { display: flex; gap: 1rem; align-items: center; }
 
         button {
             cursor: pointer;
@@ -56,50 +60,50 @@
             border: none;
             font-weight: 600;
             transition: 0.2s;
+            font-family: inherit;
         }
 
         .btn-primary { background: var(--primary); color: white; }
         .btn-primary:hover { background: #5a52d5; }
         .btn-outline { background: transparent; border: 2px solid var(--primary); color: var(--primary); }
         .btn-danger { background: var(--danger); color: white; }
+        .btn-text { background: none; color: #555; text-decoration: underline; font-size: 0.8rem;}
 
-        /* Searchbar */
-        .search-container {
-            flex-grow: 1;
-            max-width: 400px;
-            margin: 0 2rem;
-            display: none; /* Hidden on very small screens initially */
-        }
-        @media(min-width: 600px) { .search-container { display: block; } }
-
+        /* Inputs & Selects */
         .search-input {
-            width: 100%;
+            flex-grow: 1;
             padding: 0.5rem 1rem;
             border: 2px solid #ddd;
             border-radius: 20px;
             outline: none;
         }
-
-        /* Container */
-        .container {
-            max-width: 1200px;
-            margin: 2rem auto;
-            padding: 0 1rem;
+        .sort-select {
+            padding: 0.5rem;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            background: white;
+            cursor: pointer;
         }
 
-        /* Grid voor posts */
+        /* Container */
+        .container { max-width: 1200px; margin: 2rem auto; padding: 0 1rem; }
+
+        /* Grid */
         .posts-grid {
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
             gap: 2rem;
         }
 
+        /* Post Card */
         .post-card {
             background: var(--white);
             border-radius: 12px;
             overflow: hidden;
             box-shadow: 0 4px 15px rgba(0,0,0,0.05);
             transition: transform 0.2s;
+            display: flex;
+            flex-direction: column;
         }
         .post-card:hover { transform: translateY(-5px); }
 
@@ -108,15 +112,35 @@
             height: 180px;
             object-fit: cover;
             background-color: #eee;
+            cursor: pointer;
         }
 
-        .post-content { padding: 1rem; }
+        .post-content { padding: 1rem; flex-grow: 1; }
         .tags { display: flex; gap: 0.5rem; margin-bottom: 0.5rem; flex-wrap: wrap;}
         .tag { font-size: 0.75rem; background: #e0e0e0; padding: 2px 8px; border-radius: 4px; }
         .post-title { font-weight: 600; margin-bottom: 0.5rem; font-size: 1.1rem; }
-        .post-meta { font-size: 0.85rem; color: #777; margin-top: 1rem; }
+        
+        .post-preview-text {
+            font-size: 0.9rem; color: #555; 
+            display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;
+            margin-bottom: 1rem;
+        }
 
-        /* Modals & Popups */
+        .post-footer {
+            padding: 1rem;
+            border-top: 1px solid #eee;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .like-btn {
+            background: none; border: none; font-size: 1.2rem; color: #ccc; transition: 0.2s; display: flex; align-items: center; gap: 5px; padding: 0;
+        }
+        .like-btn.liked { color: var(--danger); }
+        .like-btn:hover { transform: scale(1.1); }
+
+        /* Modals */
         .modal {
             display: none;
             position: fixed;
@@ -131,11 +155,29 @@
             padding: 2rem;
             border-radius: 12px;
             width: 90%;
-            max-width: 500px;
+            max-width: 600px;
             max-height: 90vh;
             overflow-y: auto;
+            position: relative;
         }
-        
+        .close-modal {
+            position: absolute; top: 1rem; right: 1rem; font-size: 1.5rem; cursor: pointer; color: #aaa;
+        }
+
+        /* Full View Styling */
+        .full-view-header { border-bottom: 1px solid #eee; padding-bottom: 1rem; margin-bottom: 1rem; }
+        .full-view-meta { color: #777; font-size: 0.85rem; margin-top: 0.5rem; display: flex; justify-content: space-between;}
+        .full-view-id { background: var(--secondary); color: white; padding: 2px 6px; border-radius: 4px; font-family: monospace; letter-spacing: 1px; }
+        .full-view-img { width: 100%; border-radius: 8px; margin-bottom: 1rem; }
+        .full-view-text { white-space: pre-wrap; line-height: 1.6; }
+
+        /* Profile Modal Styling */
+        .my-post-item {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 10px; border-bottom: 1px solid #eee;
+        }
+        .my-post-info { font-size: 0.9rem; }
+
         /* Form Styling */
         .form-group { margin-bottom: 1rem; }
         .form-group label { display: block; margin-bottom: 0.3rem; font-weight: 600; font-size: 0.9rem; }
@@ -145,129 +187,131 @@
 
         /* Cookie Banner */
         #cookie-banner {
-            position: fixed;
-            bottom: 0; left: 0; right: 0;
-            background: var(--secondary);
-            color: white;
-            padding: 1.5rem;
-            text-align: center;
-            z-index: 2000;
-            display: none; /* JS will toggle */
+            position: fixed; bottom: 0; left: 0; right: 0;
+            background: var(--secondary); color: white; padding: 1.5rem; text-align: center; z-index: 2000; display: none;
         }
         #cookie-banner a { color: var(--primary); text-decoration: underline; cursor: pointer; }
 
-        /* Utility */
         .hidden { display: none !important; }
+
+        /* Responsive */
+        @media(max-width: 700px) {
+            .nav-center { display: none; } /* Search moves or hides on mobile for simplicity in this demo */
+            /* You could add a mobile search toggle here */
+        }
     </style>
 </head>
 <body>
 
     <nav>
         <div class="logo">Toetz.</div>
-        <div class="search-container">
-            <input type="text" id="searchInput" class="search-input" placeholder="Zoek op vak, titel of jaar...">
+        
+        <div class="nav-center">
+            <input type="text" id="searchInput" class="search-input" placeholder="Zoek op ID, titel, vak...">
+            <select id="sortSelect" class="sort-select" onchange="window.reSortPosts()">
+                <option value="newest">Nieuwste eerst</option>
+                <option value="likes">Meeste likes</option>
+            </select>
         </div>
+
         <div class="nav-actions">
             <div id="auth-buttons">
-                <button class="btn-outline" onclick="openModal('loginModal')">Inloggen</button>
+                <button class="btn-primary" onclick="openModal('loginModal')">Inloggen</button>
             </div>
-            <div id="user-menu" class="hidden">
+            <div id="user-menu" class="hidden" style="display:flex; align-items:center; gap:10px;">
                 <button class="btn-primary" onclick="checkCookieAndAction(openUploadModal)">+ Upload</button>
-                <button class="btn-danger" id="logoutBtn">Uitloggen</button>
+                <button class="btn-outline" onclick="openProfileModal()" title="Mijn Account">
+                    <i class="fa-solid fa-user"></i>
+                </button>
             </div>
         </div>
     </nav>
 
     <div class="container">
-        <h2>Recente Toetsstof & Samenvattingen</h2>
+        <div style="margin-bottom: 1rem; font-size: 0.9rem; color: #666;">
+            Ontdek samenvattingen, oefentoetsen en meer.
+        </div>
+        
         <div id="posts-container" class="posts-grid">
             <p>Laden...</p>
         </div>
     </div>
 
     <div id="cookie-banner">
-        <p>Om te uploaden en in te loggen moet je onze cookies en voorwaarden accepteren. 
-           <a onclick="alert('Voorwaarden: \n1. Wees respectvol.\n2. Geen illegale content.\n3. Wij slaan je data op.')">Lees Voorwaarden</a>
-        </p>
+        <p>Om te uploaden, liken en in te loggen moet je cookies accepteren. <a onclick="alert('Voorwaarden: \n1. Geen illegale content.\n2. Respectvol blijven.\n3. Wij slaan data op.')">Voorwaarden</a></p>
         <button class="btn-primary" onclick="acceptCookies()">Accepteren</button>
     </div>
 
     <div id="loginModal" class="modal">
-        <div class="modal-content">
+        <div class="modal-content" style="max-width:400px;">
+            <span class="close-modal" onclick="closeModal('loginModal')">&times;</span>
             <h3 id="authTitle">Inloggen</h3>
             <form id="authForm">
-                <div class="form-group">
-                    <label>Email</label>
-                    <input type="email" id="authEmail" required>
-                </div>
-                <div class="form-group">
-                    <label>Wachtwoord</label>
-                    <input type="password" id="authPass" required>
-                </div>
+                <div class="form-group"><label>Email</label><input type="email" id="authEmail" required></div>
+                <div class="form-group"><label>Wachtwoord</label><input type="password" id="authPass" required></div>
                 <button type="submit" class="btn-primary" style="width:100%">Ga verder</button>
                 <p style="text-align:center; font-size:0.8rem; margin-top:10px;">
                     Nog geen account? <a href="#" onclick="toggleAuthMode()">Klik hier</a> om te registreren.
                 </p>
-                <button type="button" class="btn-outline" style="width:100%; margin-top:10px;" onclick="closeModal('loginModal')">Annuleren</button>
             </form>
         </div>
     </div>
 
     <div id="uploadModal" class="modal">
         <div class="modal-content">
+            <span class="close-modal" onclick="closeModal('uploadModal')">&times;</span>
             <h3>Nieuw Materiaal Uploaden</h3>
             <form id="uploadForm">
-                <div class="form-group">
-                    <label>Titel (bijv. Samenvatting H3)</label>
-                    <input type="text" id="upTitle" required>
-                </div>
+                <div class="form-group"><label>Titel</label><input type="text" id="upTitle" required></div>
                 <div class="form-group">
                     <label>Vak</label>
                     <select id="upSubject" required>
-                        <option value="Wiskunde">Wiskunde</option>
-                        <option value="Engels">Engels</option>
-                        <option value="Geschiedenis">Geschiedenis</option>
-                        <option value="Biologie">Biologie</option>
+                        <option value="Wiskunde">Wiskunde</option><option value="Engels">Engels</option>
+                        <option value="Geschiedenis">Geschiedenis</option><option value="Biologie">Biologie</option>
+                        <option value="Scheikunde">Scheikunde</option><option value="Natuurkunde">Natuurkunde</option>
                         <option value="Anders">Anders</option>
                     </select>
                 </div>
-                <div class="form-group">
-                    <div style="display:flex; gap:10px;">
-                        <div style="flex:1">
-                            <label>Jaar</label>
-                            <input type="number" id="upYear" placeholder="Bijv. 3" required>
-                        </div>
-                        <div style="flex:1">
-                            <label>Niveau</label>
-                            <select id="upLevel">
-                                <option>VMBO</option>
-                                <option>HAVO</option>
-                                <option>VWO</option>
-                            </select>
-                        </div>
-                    </div>
+                <div class="form-group" style="display:flex; gap:10px;">
+                    <div style="flex:1"><label>Jaar</label><input type="number" id="upYear" required></div>
+                    <div style="flex:1"><label>Niveau</label><select id="upLevel"><option>VMBO</option><option>HAVO</option><option>VWO</option></select></div>
                 </div>
-                <div class="form-group">
-                    <label>Beschrijving / Tekst</label>
-                    <textarea id="upText" rows="4" required></textarea>
-                </div>
-                <div class="form-group">
-                    <label>Foto (Optioneel)</label>
-                    <input type="file" id="upFile" accept="image/*">
-                </div>
+                <div class="form-group"><label>Volledige Tekst / Samenvatting</label><textarea id="upText" rows="6" required></textarea></div>
+                <div class="form-group"><label>Foto (Optioneel)</label><input type="file" id="upFile" accept="image/*"></div>
                 <button type="submit" class="btn-primary" style="width:100%">Plaatsen</button>
-                <button type="button" class="btn-outline" style="width:100%; margin-top:10px;" onclick="closeModal('uploadModal')">Annuleren</button>
             </form>
         </div>
     </div>
 
+    <div id="viewModal" class="modal">
+        <div class="modal-content">
+            <span class="close-modal" onclick="closeModal('viewModal')">&times;</span>
+            <div id="viewContent">
+                </div>
+        </div>
+    </div>
+
+    <div id="profileModal" class="modal">
+        <div class="modal-content">
+            <span class="close-modal" onclick="closeModal('profileModal')">&times;</span>
+            <h3>Mijn Profiel</h3>
+            <p>Ingelogd als: <span id="profileEmail" style="font-weight:bold;"></span></p>
+            <hr>
+            <h4>Mijn Uploads</h4>
+            <div id="myPostsList" style="max-height: 300px; overflow-y:auto;">
+                </div>
+            <hr>
+            <button class="btn-danger" style="width:100%" id="logoutBtn">Uitloggen</button>
+        </div>
+    </div>
+
     <script type="module">
-        // --- 1. CONFIGURATIE ---
         import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
         import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-auth.js";
-        import { getFirestore, collection, addDoc, getDocs, query, orderBy } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
+        import { getFirestore, collection, addDoc, getDocs, doc, updateDoc, deleteDoc, arrayUnion, arrayRemove, query, orderBy } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
 
-        // VUL DEZE GEGEVENS IN (Zie Setup Instructies)
+        // Your web app's Firebase configuration
+        // For Firebase JS SDK v7.20.0 and later, measurementId is optional
         const firebaseConfig = {
           apiKey: "AIzaSyDB82HYafoyq8bpwq9bthT8UecVTgUvCt0",
           authDomain: "toetz-b8d64.firebaseapp.com",
@@ -277,186 +321,223 @@
           appId: "1:433363534465:web:32eb43739843f278d40380",
           measurementId: "G-EGFMR9YDRR"
         };
-
+        
         const SUPABASE_URL = 'https://ekzzqgszmhvywnumnnio.supabase.co';
         const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVrenpxZ3N6bWh2eXdudW1ubmlvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjkxMDQ1OTAsImV4cCI6MjA4NDY4MDU5MH0.tXdKKp0aKzJCyzAOufbiEqRcIga1ShwQPD3kQGDO60M';
 
-        // Initialize Services
+        // Init
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
         const db = getFirestore(app);
         const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-        // --- 2. STATE & VARIABLES ---
+        // State
         let currentUser = null;
         let isRegistering = false;
-        let postsData = [];
+        let allPosts = []; // Hier slaan we alle geladen data op
 
-        // --- 3. COOKIE LOGIC ---
+        // --- HELPERS ---
+        function generateShortId() {
+            // Maak een random string van 6 tekens (bijv XK9L2M)
+            const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+            let result = '';
+            for (let i = 0; i < 6; i++) {
+                result += chars.charAt(Math.floor(Math.random() * chars.length));
+            }
+            return result;
+        }
+
+        window.formatDate = (timestamp) => {
+            if(!timestamp) return '';
+            const date = timestamp.seconds ? new Date(timestamp.seconds * 1000) : new Date(timestamp);
+            return date.toLocaleDateString('nl-NL');
+        };
+
+        // --- COOKIES ---
         window.hasAcceptedCookies = localStorage.getItem('toetz_cookies') === 'true';
-
-        window.checkCookieAndAction = (actionCallback) => {
+        window.checkCookieAndAction = (callback, arg) => {
             if (!window.hasAcceptedCookies) {
                 document.getElementById('cookie-banner').style.display = 'block';
             } else {
-                actionCallback();
+                callback(arg);
             }
         };
-
         window.acceptCookies = () => {
             localStorage.setItem('toetz_cookies', 'true');
             window.hasAcceptedCookies = true;
             document.getElementById('cookie-banner').style.display = 'none';
         };
 
-        // Trigger cookie banner on login attempt if not accepted
-        const originalOpenModal = window.openModal; // Helper
-        
-        // --- 4. AUTHENTICATION ---
+        // --- AUTH ---
         onAuthStateChanged(auth, (user) => {
             currentUser = user;
             if (user) {
                 document.getElementById('auth-buttons').classList.add('hidden');
-                document.getElementById('user-menu').classList.remove('hidden');
+                document.getElementById('user-menu').style.display = 'flex';
+                document.getElementById('profileEmail').innerText = user.email;
             } else {
                 document.getElementById('auth-buttons').classList.remove('hidden');
-                document.getElementById('user-menu').classList.add('hidden');
+                document.getElementById('user-menu').style.display = 'none';
             }
         });
 
         document.getElementById('authForm').addEventListener('submit', async (e) => {
             e.preventDefault();
-            // Check Cookies First
-            if(!window.hasAcceptedCookies) {
-                closeModal('loginModal');
-                document.getElementById('cookie-banner').style.display = 'block';
-                return;
-            }
-
+            if(!window.hasAcceptedCookies) return alert("Accepteer eerst cookies!");
+            
             const email = document.getElementById('authEmail').value;
             const pass = document.getElementById('authPass').value;
-
             try {
-                if (isRegistering) {
-                    await createUserWithEmailAndPassword(auth, email, pass);
-                    alert("Account aangemaakt!");
-                } else {
-                    await signInWithEmailAndPassword(auth, email, pass);
-                }
+                if (isRegistering) await createUserWithEmailAndPassword(auth, email, pass);
+                else await signInWithEmailAndPassword(auth, email, pass);
                 closeModal('loginModal');
-            } catch (error) {
-                alert("Fout: " + error.message);
-            }
+            } catch (err) { alert(err.message); }
         });
 
-        document.getElementById('logoutBtn').addEventListener('click', () => signOut(auth));
+        document.getElementById('logoutBtn').addEventListener('click', () => {
+            signOut(auth);
+            closeModal('profileModal');
+        });
 
         window.toggleAuthMode = () => {
             isRegistering = !isRegistering;
             document.getElementById('authTitle').innerText = isRegistering ? "Registreren" : "Inloggen";
         };
 
-        // --- 5. UPLOAD LOGIC (Firebase + Supabase) ---
-        window.openUploadModal = () => {
-            openModal('uploadModal');
-        };
+        // --- DATA LOGICA (Upload, Like, Delete) ---
 
+        // 1. Uploaden
         document.getElementById('uploadForm').addEventListener('submit', async (e) => {
             e.preventDefault();
-            if (!currentUser) return alert("Je moet ingelogd zijn!");
-
-            const submitBtn = e.target.querySelector('button[type="submit"]');
-            submitBtn.innerText = "Bezig met uploaden...";
-            submitBtn.disabled = true;
-
-            const title = document.getElementById('upTitle').value;
-            const subject = document.getElementById('upSubject').value;
-            const year = document.getElementById('upYear').value;
-            const level = document.getElementById('upLevel').value;
-            const text = document.getElementById('upText').value;
-            const fileInput = document.getElementById('upFile');
-
-            let imageUrl = null;
+            if (!currentUser) return;
+            const btn = e.target.querySelector('button');
+            btn.innerText = "Bezig..."; btn.disabled = true;
 
             try {
-                // A. Upload Image to Supabase (if exists)
+                let imageUrl = null;
+                const fileInput = document.getElementById('upFile');
                 if (fileInput.files.length > 0) {
                     const file = fileInput.files[0];
                     const fileName = `${Date.now()}_${file.name}`;
-                    
-                    const { data, error } = await supabase.storage
-                        .from('toetz-files')
-                        .upload(fileName, file);
-
+                    const { error } = await supabase.storage.from('toetz-files').upload(fileName, file);
                     if (error) throw error;
-                    
-                    // Get Public URL
-                    const { data: urlData } = supabase.storage
-                        .from('toetz-files')
-                        .getPublicUrl(fileName);
-                    
-                    imageUrl = urlData.publicUrl;
+                    const { data } = supabase.storage.from('toetz-files').getPublicUrl(fileName);
+                    imageUrl = data.publicUrl;
                 }
 
-                // B. Save Metadata to Firebase Firestore
+                const shortId = generateShortId();
+
                 await addDoc(collection(db, "posts"), {
-                    title,
-                    subject,
-                    year,
-                    level,
-                    text,
-                    imageUrl, // kan null zijn
+                    title: document.getElementById('upTitle').value,
+                    subject: document.getElementById('upSubject').value,
+                    year: document.getElementById('upYear').value,
+                    level: document.getElementById('upLevel').value,
+                    text: document.getElementById('upText').value,
+                    imageUrl,
+                    shortId: shortId,
                     authorEmail: currentUser.email,
+                    authorUid: currentUser.uid,
+                    likes: [], // Lijst van User IDs die geliket hebben
                     createdAt: new Date()
                 });
 
-                alert("Geüpload!");
+                alert("Geüpload! Je ID is: " + shortId);
                 closeModal('uploadModal');
                 e.target.reset();
-                loadPosts(); // Refresh feed
+                loadPosts(); 
 
-            } catch (err) {
-                console.error(err);
-                alert("Er ging iets mis: " + err.message);
-            } finally {
-                submitBtn.innerText = "Plaatsen";
-                submitBtn.disabled = false;
-            }
+            } catch (err) { alert("Fout: " + err.message); }
+            finally { btn.innerText = "Plaatsen"; btn.disabled = false; }
         });
 
-        // --- 6. READ & SEARCH LOGIC ---
+        // 2. Liken
+        window.toggleLike = async (postId) => {
+            if(!currentUser) return alert("Log in om te liken!");
+            checkCookieAndAction(async () => {
+                // Zoek de post in lokale data om te kijken of we moeten liken of unliken
+                const post = allPosts.find(p => p.id === postId);
+                if(!post) return;
+
+                const hasLiked = post.likes && post.likes.includes(currentUser.uid);
+                const docRef = doc(db, "posts", postId);
+
+                try {
+                    if(hasLiked) {
+                        await updateDoc(docRef, { likes: arrayRemove(currentUser.uid) });
+                    } else {
+                        await updateDoc(docRef, { likes: arrayUnion(currentUser.uid) });
+                    }
+                    // Herlaad data (simpelste manier om UI te updaten)
+                    loadPosts();
+                } catch(err) { console.error(err); }
+            });
+        };
+
+        // 3. Verwijderen
+        window.deletePost = async (postId) => {
+            if(!confirm("Weet je zeker dat je dit wilt verwijderen?")) return;
+            try {
+                await deleteDoc(doc(db, "posts", postId));
+                alert("Verwijderd.");
+                loadPosts(); // Refresh main feed
+                openProfileModal(); // Refresh list in modal
+            } catch(err) { alert("Fout: " + err.message); }
+        };
+
+        // --- WEERGAVE LOGICA ---
+
+        // Load Posts
         async function loadPosts() {
-            const container = document.getElementById('posts-container');
-            container.innerHTML = '<p>Laden...</p>';
-            
             try {
                 const q = query(collection(db, "posts"), orderBy("createdAt", "desc"));
-                const querySnapshot = await getDocs(q);
+                const snapshot = await getDocs(q);
+                allPosts = [];
+                snapshot.forEach(doc => allPosts.push({ id: doc.id, ...doc.data() }));
                 
-                postsData = [];
-                querySnapshot.forEach((doc) => {
-                    postsData.push({ id: doc.id, ...doc.data() });
-                });
-                
-                renderPosts(postsData);
-            } catch (err) {
-                container.innerHTML = `<p>Fout bij laden: ${err.message}</p>`;
-            }
+                // Pas sortering en filter toe
+                filterAndRender();
+            } catch(err) { console.error(err); }
         }
 
-        function renderPosts(posts) {
+        // Filter, Sort & Render
+        window.reSortPosts = () => filterAndRender();
+        document.getElementById('searchInput').addEventListener('input', () => filterAndRender());
+
+        function filterAndRender() {
+            const term = document.getElementById('searchInput').value.toLowerCase();
+            const sortMethod = document.getElementById('sortSelect').value;
             const container = document.getElementById('posts-container');
             container.innerHTML = '';
 
-            if(posts.length === 0) {
-                container.innerHTML = '<p>Nog geen posts gevonden.</p>';
+            // 1. Filter
+            let filtered = allPosts.filter(p => {
+                const searchStr = (p.title + " " + p.subject + " " + p.shortId + " " + p.level).toLowerCase();
+                return searchStr.includes(term);
+            });
+
+            // 2. Sorteren
+            if (sortMethod === 'likes') {
+                filtered.sort((a, b) => (b.likes ? b.likes.length : 0) - (a.likes ? a.likes.length : 0));
+            } else {
+                // Nieuwste eerst (is al standaard vanuit Firestore, maar voor zekerheid op datum sorteren)
+                filtered.sort((a, b) => b.createdAt.seconds - a.createdAt.seconds);
+            }
+
+            // 3. Render
+            if(filtered.length === 0) {
+                container.innerHTML = '<p>Geen resultaten.</p>';
                 return;
             }
 
-            posts.forEach(post => {
+            filtered.forEach(post => {
+                const likeCount = post.likes ? post.likes.length : 0;
+                const isLiked = currentUser && post.likes && post.likes.includes(currentUser.uid);
+                const heartClass = isLiked ? 'fa-solid fa-heart' : 'fa-regular fa-heart';
+                const likedClass = isLiked ? 'liked' : '';
+
                 const imgHTML = post.imageUrl 
-                    ? `<img src="${post.imageUrl}" class="post-img" alt="Samenvatting foto">` 
-                    : `<div class="post-img" style="display:flex;align-items:center;justify-content:center;color:#ccc;">Geen foto</div>`;
+                    ? `<img src="${post.imageUrl}" class="post-img" onclick="openViewModal('${post.id}')">` 
+                    : `<div class="post-img" onclick="openViewModal('${post.id}')" style="display:flex;align-items:center;justify-content:center;color:#ccc;">Klik voor details</div>`;
 
                 const card = document.createElement('div');
                 card.className = 'post-card';
@@ -464,51 +545,89 @@
                     ${imgHTML}
                     <div class="post-content">
                         <div class="tags">
-                            <span class="tag">${post.subject}</span>
-                            <span class="tag">Jaar ${post.year}</span>
-                            <span class="tag">${post.level}</span>
+                            <span class="tag" style="background:${getSubjectColor(post.subject)}; color:white;">${post.subject}</span>
+                            <span class="tag">${post.level} ${post.year}</span>
                         </div>
                         <div class="post-title">${post.title}</div>
-                        <div style="font-size:0.9rem; color:#555; max-height:80px; overflow:hidden;">
-                            ${post.text}
-                        </div>
-                        <div class="post-meta">Door: ${post.authorEmail.split('@')[0]}</div>
+                        <div class="post-preview-text">${post.text}</div>
+                    </div>
+                    <div class="post-footer">
+                        <button class="btn-outline" style="padding: 4px 10px; font-size: 0.8rem;" onclick="openViewModal('${post.id}')">Bekijken</button>
+                        <button class="like-btn ${likedClass}" onclick="toggleLike('${post.id}')">
+                            <i class="${heartClass}"></i> ${likeCount}
+                        </button>
                     </div>
                 `;
                 container.appendChild(card);
             });
         }
 
-        // Search Filter (Client Side voor snelheid in deze demo)
-        document.getElementById('searchInput').addEventListener('input', (e) => {
-            const term = e.target.value.toLowerCase();
-            const filtered = postsData.filter(post => 
-                post.title.toLowerCase().includes(term) || 
-                post.subject.toLowerCase().includes(term) ||
-                post.level.toLowerCase().includes(term)
-            );
-            renderPosts(filtered);
-        });
+        // --- MODALS & UI ACTIES ---
 
-        // --- 7. UI HELPERS ---
-        window.openModal = (id) => {
-            // Check cookie for login actions specifically
-            if (id === 'loginModal' || id === 'uploadModal') {
-                if(!window.hasAcceptedCookies) {
-                    document.getElementById('cookie-banner').style.display = 'block';
-                    return;
-                }
-            }
-            document.getElementById(id).style.display = 'flex';
-        };
-        
+        window.openModal = (id) => document.getElementById(id).style.display = 'flex';
         window.closeModal = (id) => document.getElementById(id).style.display = 'none';
 
-        // Close modal when clicking outside
-        window.onclick = (event) => {
-            if (event.target.classList.contains('modal')) {
-                event.target.style.display = "none";
+        // Full View Modal
+        window.openViewModal = (postId) => {
+            const post = allPosts.find(p => p.id === postId);
+            if(!post) return;
+
+            const content = document.getElementById('viewContent');
+            const imgHTML = post.imageUrl ? `<img src="${post.imageUrl}" class="full-view-img">` : '';
+
+            content.innerHTML = `
+                <div class="full-view-header">
+                    <h2>${post.title}</h2>
+                    <div class="full-view-meta">
+                        <span>${post.subject} | ${post.level} jaar ${post.year}</span>
+                        <span class="full-view-id">ID: ${post.shortId}</span>
+                    </div>
+                    <div class="full-view-meta">
+                        <span>Door: ${post.authorEmail.split('@')[0]}</span>
+                        <span>${formatDate(post.createdAt)}</span>
+                    </div>
+                </div>
+                ${imgHTML}
+                <div class="full-view-text">${post.text}</div>
+            `;
+            openModal('viewModal');
+        };
+
+        // Profile Modal
+        window.openProfileModal = () => {
+            if(!currentUser) return;
+            const list = document.getElementById('myPostsList');
+            list.innerHTML = '';
+            
+            const myPosts = allPosts.filter(p => p.authorUid === currentUser.uid);
+            
+            if(myPosts.length === 0) {
+                list.innerHTML = '<p style="text-align:center; color:#777;">Je hebt nog niets geüpload.</p>';
+            } else {
+                myPosts.forEach(post => {
+                    const div = document.createElement('div');
+                    div.className = 'my-post-item';
+                    div.innerHTML = `
+                        <div class="my-post-info">
+                            <strong>${post.title}</strong><br>
+                            <span style="font-size:0.8rem; color:#777;">ID: ${post.shortId} | ${post.likes ? post.likes.length : 0} Likes</span>
+                        </div>
+                        <button class="btn-danger" style="padding: 5px 10px;" onclick="deletePost('${post.id}')"><i class="fa-solid fa-trash"></i></button>
+                    `;
+                    list.appendChild(div);
+                });
             }
+            openModal('profileModal');
+        };
+
+        function getSubjectColor(subject) {
+            const colors = { 'Wiskunde': '#3498db', 'Engels': '#e74c3c', 'Geschiedenis': '#f1c40f', 'Biologie': '#2ecc71', 'Anders': '#95a5a6' };
+            return colors[subject] || '#95a5a6';
+        }
+
+        // Close logic
+        window.onclick = (e) => {
+            if (e.target.classList.contains('modal')) e.target.style.display = "none";
         };
 
         // Start
