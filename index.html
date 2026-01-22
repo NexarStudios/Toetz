@@ -1,0 +1,518 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Toetz - Deel je kennis</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    
+    <style>
+        /* --- CSS STYLING --- */
+        :root {
+            --primary: #6C63FF;
+            --secondary: #2F2E41;
+            --bg: #F4F6F8;
+            --white: #ffffff;
+            --danger: #ff4b4b;
+        }
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            background-color: var(--bg);
+            margin: 0;
+            padding: 0;
+            color: var(--secondary);
+        }
+
+        /* Navbar */
+        nav {
+            background: var(--white);
+            padding: 1rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .logo {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--primary);
+        }
+
+        .nav-actions {
+            display: flex;
+            gap: 1rem;
+        }
+
+        button {
+            cursor: pointer;
+            padding: 0.5rem 1rem;
+            border-radius: 8px;
+            border: none;
+            font-weight: 600;
+            transition: 0.2s;
+        }
+
+        .btn-primary { background: var(--primary); color: white; }
+        .btn-primary:hover { background: #5a52d5; }
+        .btn-outline { background: transparent; border: 2px solid var(--primary); color: var(--primary); }
+        .btn-danger { background: var(--danger); color: white; }
+
+        /* Searchbar */
+        .search-container {
+            flex-grow: 1;
+            max-width: 400px;
+            margin: 0 2rem;
+            display: none; /* Hidden on very small screens initially */
+        }
+        @media(min-width: 600px) { .search-container { display: block; } }
+
+        .search-input {
+            width: 100%;
+            padding: 0.5rem 1rem;
+            border: 2px solid #ddd;
+            border-radius: 20px;
+            outline: none;
+        }
+
+        /* Container */
+        .container {
+            max-width: 1200px;
+            margin: 2rem auto;
+            padding: 0 1rem;
+        }
+
+        /* Grid voor posts */
+        .posts-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 2rem;
+        }
+
+        .post-card {
+            background: var(--white);
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+            transition: transform 0.2s;
+        }
+        .post-card:hover { transform: translateY(-5px); }
+
+        .post-img {
+            width: 100%;
+            height: 180px;
+            object-fit: cover;
+            background-color: #eee;
+        }
+
+        .post-content { padding: 1rem; }
+        .tags { display: flex; gap: 0.5rem; margin-bottom: 0.5rem; flex-wrap: wrap;}
+        .tag { font-size: 0.75rem; background: #e0e0e0; padding: 2px 8px; border-radius: 4px; }
+        .post-title { font-weight: 600; margin-bottom: 0.5rem; font-size: 1.1rem; }
+        .post-meta { font-size: 0.85rem; color: #777; margin-top: 1rem; }
+
+        /* Modals & Popups */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.5);
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+        .modal-content {
+            background: var(--white);
+            padding: 2rem;
+            border-radius: 12px;
+            width: 90%;
+            max-width: 500px;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+        
+        /* Form Styling */
+        .form-group { margin-bottom: 1rem; }
+        .form-group label { display: block; margin-bottom: 0.3rem; font-weight: 600; font-size: 0.9rem; }
+        .form-group input, .form-group select, .form-group textarea {
+            width: 100%; padding: 0.6rem; border: 1px solid #ccc; border-radius: 6px; box-sizing: border-box;
+        }
+
+        /* Cookie Banner */
+        #cookie-banner {
+            position: fixed;
+            bottom: 0; left: 0; right: 0;
+            background: var(--secondary);
+            color: white;
+            padding: 1.5rem;
+            text-align: center;
+            z-index: 2000;
+            display: none; /* JS will toggle */
+        }
+        #cookie-banner a { color: var(--primary); text-decoration: underline; cursor: pointer; }
+
+        /* Utility */
+        .hidden { display: none !important; }
+    </style>
+</head>
+<body>
+
+    <nav>
+        <div class="logo">Toetz.</div>
+        <div class="search-container">
+            <input type="text" id="searchInput" class="search-input" placeholder="Zoek op vak, titel of jaar...">
+        </div>
+        <div class="nav-actions">
+            <div id="auth-buttons">
+                <button class="btn-outline" onclick="openModal('loginModal')">Inloggen</button>
+            </div>
+            <div id="user-menu" class="hidden">
+                <button class="btn-primary" onclick="checkCookieAndAction(openUploadModal)">+ Upload</button>
+                <button class="btn-danger" id="logoutBtn">Uitloggen</button>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container">
+        <h2>Recente Toetsstof & Samenvattingen</h2>
+        <div id="posts-container" class="posts-grid">
+            <p>Laden...</p>
+        </div>
+    </div>
+
+    <div id="cookie-banner">
+        <p>Om te uploaden en in te loggen moet je onze cookies en voorwaarden accepteren. 
+           <a onclick="alert('Voorwaarden: \n1. Wees respectvol.\n2. Geen illegale content.\n3. Wij slaan je data op.')">Lees Voorwaarden</a>
+        </p>
+        <button class="btn-primary" onclick="acceptCookies()">Accepteren</button>
+    </div>
+
+    <div id="loginModal" class="modal">
+        <div class="modal-content">
+            <h3 id="authTitle">Inloggen</h3>
+            <form id="authForm">
+                <div class="form-group">
+                    <label>Email</label>
+                    <input type="email" id="authEmail" required>
+                </div>
+                <div class="form-group">
+                    <label>Wachtwoord</label>
+                    <input type="password" id="authPass" required>
+                </div>
+                <button type="submit" class="btn-primary" style="width:100%">Ga verder</button>
+                <p style="text-align:center; font-size:0.8rem; margin-top:10px;">
+                    Nog geen account? <a href="#" onclick="toggleAuthMode()">Klik hier</a> om te registreren.
+                </p>
+                <button type="button" class="btn-outline" style="width:100%; margin-top:10px;" onclick="closeModal('loginModal')">Annuleren</button>
+            </form>
+        </div>
+    </div>
+
+    <div id="uploadModal" class="modal">
+        <div class="modal-content">
+            <h3>Nieuw Materiaal Uploaden</h3>
+            <form id="uploadForm">
+                <div class="form-group">
+                    <label>Titel (bijv. Samenvatting H3)</label>
+                    <input type="text" id="upTitle" required>
+                </div>
+                <div class="form-group">
+                    <label>Vak</label>
+                    <select id="upSubject" required>
+                        <option value="Wiskunde">Wiskunde</option>
+                        <option value="Engels">Engels</option>
+                        <option value="Geschiedenis">Geschiedenis</option>
+                        <option value="Biologie">Biologie</option>
+                        <option value="Anders">Anders</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <div style="display:flex; gap:10px;">
+                        <div style="flex:1">
+                            <label>Jaar</label>
+                            <input type="number" id="upYear" placeholder="Bijv. 3" required>
+                        </div>
+                        <div style="flex:1">
+                            <label>Niveau</label>
+                            <select id="upLevel">
+                                <option>VMBO</option>
+                                <option>HAVO</option>
+                                <option>VWO</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label>Beschrijving / Tekst</label>
+                    <textarea id="upText" rows="4" required></textarea>
+                </div>
+                <div class="form-group">
+                    <label>Foto (Optioneel)</label>
+                    <input type="file" id="upFile" accept="image/*">
+                </div>
+                <button type="submit" class="btn-primary" style="width:100%">Plaatsen</button>
+                <button type="button" class="btn-outline" style="width:100%; margin-top:10px;" onclick="closeModal('uploadModal')">Annuleren</button>
+            </form>
+        </div>
+    </div>
+
+    <script type="module">
+        // --- 1. CONFIGURATIE ---
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
+        import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-auth.js";
+        import { getFirestore, collection, addDoc, getDocs, query, orderBy } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore.js";
+
+        // VUL DEZE GEGEVENS IN (Zie Setup Instructies)
+        const firebaseConfig = {
+          apiKey: "AIzaSyDB82HYafoyq8bpwq9bthT8UecVTgUvCt0",
+          authDomain: "toetz-b8d64.firebaseapp.com",
+          projectId: "toetz-b8d64",
+          storageBucket: "toetz-b8d64.firebasestorage.app",
+          messagingSenderId: "433363534465",
+          appId: "1:433363534465:web:32eb43739843f278d40380",
+          measurementId: "G-EGFMR9YDRR"
+        };
+
+        const SUPABASE_URL = 'https://ekzzqgszmhvywnumnnio.supabase.co';
+        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVrenpxZ3N6bWh2eXdudW1ubmlvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjkxMDQ1OTAsImV4cCI6MjA4NDY4MDU5MH0.tXdKKp0aKzJCyzAOufbiEqRcIga1ShwQPD3kQGDO60M';
+
+        // Initialize Services
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+        // --- 2. STATE & VARIABLES ---
+        let currentUser = null;
+        let isRegistering = false;
+        let postsData = [];
+
+        // --- 3. COOKIE LOGIC ---
+        window.hasAcceptedCookies = localStorage.getItem('toetz_cookies') === 'true';
+
+        window.checkCookieAndAction = (actionCallback) => {
+            if (!window.hasAcceptedCookies) {
+                document.getElementById('cookie-banner').style.display = 'block';
+            } else {
+                actionCallback();
+            }
+        };
+
+        window.acceptCookies = () => {
+            localStorage.setItem('toetz_cookies', 'true');
+            window.hasAcceptedCookies = true;
+            document.getElementById('cookie-banner').style.display = 'none';
+        };
+
+        // Trigger cookie banner on login attempt if not accepted
+        const originalOpenModal = window.openModal; // Helper
+        
+        // --- 4. AUTHENTICATION ---
+        onAuthStateChanged(auth, (user) => {
+            currentUser = user;
+            if (user) {
+                document.getElementById('auth-buttons').classList.add('hidden');
+                document.getElementById('user-menu').classList.remove('hidden');
+            } else {
+                document.getElementById('auth-buttons').classList.remove('hidden');
+                document.getElementById('user-menu').classList.add('hidden');
+            }
+        });
+
+        document.getElementById('authForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            // Check Cookies First
+            if(!window.hasAcceptedCookies) {
+                closeModal('loginModal');
+                document.getElementById('cookie-banner').style.display = 'block';
+                return;
+            }
+
+            const email = document.getElementById('authEmail').value;
+            const pass = document.getElementById('authPass').value;
+
+            try {
+                if (isRegistering) {
+                    await createUserWithEmailAndPassword(auth, email, pass);
+                    alert("Account aangemaakt!");
+                } else {
+                    await signInWithEmailAndPassword(auth, email, pass);
+                }
+                closeModal('loginModal');
+            } catch (error) {
+                alert("Fout: " + error.message);
+            }
+        });
+
+        document.getElementById('logoutBtn').addEventListener('click', () => signOut(auth));
+
+        window.toggleAuthMode = () => {
+            isRegistering = !isRegistering;
+            document.getElementById('authTitle').innerText = isRegistering ? "Registreren" : "Inloggen";
+        };
+
+        // --- 5. UPLOAD LOGIC (Firebase + Supabase) ---
+        window.openUploadModal = () => {
+            openModal('uploadModal');
+        };
+
+        document.getElementById('uploadForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            if (!currentUser) return alert("Je moet ingelogd zijn!");
+
+            const submitBtn = e.target.querySelector('button[type="submit"]');
+            submitBtn.innerText = "Bezig met uploaden...";
+            submitBtn.disabled = true;
+
+            const title = document.getElementById('upTitle').value;
+            const subject = document.getElementById('upSubject').value;
+            const year = document.getElementById('upYear').value;
+            const level = document.getElementById('upLevel').value;
+            const text = document.getElementById('upText').value;
+            const fileInput = document.getElementById('upFile');
+
+            let imageUrl = null;
+
+            try {
+                // A. Upload Image to Supabase (if exists)
+                if (fileInput.files.length > 0) {
+                    const file = fileInput.files[0];
+                    const fileName = `${Date.now()}_${file.name}`;
+                    
+                    const { data, error } = await supabase.storage
+                        .from('toetz-files')
+                        .upload(fileName, file);
+
+                    if (error) throw error;
+                    
+                    // Get Public URL
+                    const { data: urlData } = supabase.storage
+                        .from('toetz-files')
+                        .getPublicUrl(fileName);
+                    
+                    imageUrl = urlData.publicUrl;
+                }
+
+                // B. Save Metadata to Firebase Firestore
+                await addDoc(collection(db, "posts"), {
+                    title,
+                    subject,
+                    year,
+                    level,
+                    text,
+                    imageUrl, // kan null zijn
+                    authorEmail: currentUser.email,
+                    createdAt: new Date()
+                });
+
+                alert("Geüpload!");
+                closeModal('uploadModal');
+                e.target.reset();
+                loadPosts(); // Refresh feed
+
+            } catch (err) {
+                console.error(err);
+                alert("Er ging iets mis: " + err.message);
+            } finally {
+                submitBtn.innerText = "Plaatsen";
+                submitBtn.disabled = false;
+            }
+        });
+
+        // --- 6. READ & SEARCH LOGIC ---
+        async function loadPosts() {
+            const container = document.getElementById('posts-container');
+            container.innerHTML = '<p>Laden...</p>';
+            
+            try {
+                const q = query(collection(db, "posts"), orderBy("createdAt", "desc"));
+                const querySnapshot = await getDocs(q);
+                
+                postsData = [];
+                querySnapshot.forEach((doc) => {
+                    postsData.push({ id: doc.id, ...doc.data() });
+                });
+                
+                renderPosts(postsData);
+            } catch (err) {
+                container.innerHTML = `<p>Fout bij laden: ${err.message}</p>`;
+            }
+        }
+
+        function renderPosts(posts) {
+            const container = document.getElementById('posts-container');
+            container.innerHTML = '';
+
+            if(posts.length === 0) {
+                container.innerHTML = '<p>Nog geen posts gevonden.</p>';
+                return;
+            }
+
+            posts.forEach(post => {
+                const imgHTML = post.imageUrl 
+                    ? `<img src="${post.imageUrl}" class="post-img" alt="Samenvatting foto">` 
+                    : `<div class="post-img" style="display:flex;align-items:center;justify-content:center;color:#ccc;">Geen foto</div>`;
+
+                const card = document.createElement('div');
+                card.className = 'post-card';
+                card.innerHTML = `
+                    ${imgHTML}
+                    <div class="post-content">
+                        <div class="tags">
+                            <span class="tag">${post.subject}</span>
+                            <span class="tag">Jaar ${post.year}</span>
+                            <span class="tag">${post.level}</span>
+                        </div>
+                        <div class="post-title">${post.title}</div>
+                        <div style="font-size:0.9rem; color:#555; max-height:80px; overflow:hidden;">
+                            ${post.text}
+                        </div>
+                        <div class="post-meta">Door: ${post.authorEmail.split('@')[0]}</div>
+                    </div>
+                `;
+                container.appendChild(card);
+            });
+        }
+
+        // Search Filter (Client Side voor snelheid in deze demo)
+        document.getElementById('searchInput').addEventListener('input', (e) => {
+            const term = e.target.value.toLowerCase();
+            const filtered = postsData.filter(post => 
+                post.title.toLowerCase().includes(term) || 
+                post.subject.toLowerCase().includes(term) ||
+                post.level.toLowerCase().includes(term)
+            );
+            renderPosts(filtered);
+        });
+
+        // --- 7. UI HELPERS ---
+        window.openModal = (id) => {
+            // Check cookie for login actions specifically
+            if (id === 'loginModal' || id === 'uploadModal') {
+                if(!window.hasAcceptedCookies) {
+                    document.getElementById('cookie-banner').style.display = 'block';
+                    return;
+                }
+            }
+            document.getElementById(id).style.display = 'flex';
+        };
+        
+        window.closeModal = (id) => document.getElementById(id).style.display = 'none';
+
+        // Close modal when clicking outside
+        window.onclick = (event) => {
+            if (event.target.classList.contains('modal')) {
+                event.target.style.display = "none";
+            }
+        };
+
+        // Start
+        loadPosts();
+    </script>
+</body>
+</html>
